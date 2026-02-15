@@ -1,0 +1,8 @@
+ipympl==0.9.4
+matplotlib==3.9.2
+keras==3.9.0
+numpy==2.1.2
+scikit-learn==1.5.2
+scikit-image==0.26.0
+scipy==1.14.1
+tensorflow==2.19.0
