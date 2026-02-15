@@ -29,7 +29,8 @@ def exercice_2_decorrelation():
     # -------------------------------------------------------------------------
     # Utilisez la fonction appropriée pour calculer les valeurs propres et vecteurs propres
     # À la place des vecteurs et valeurs propres nulles ci-dessous
-    eigenvalues, eigenvectors = numpy.zeros(3), numpy.zeros((3, 3))
+    #eigenvalues, eigenvectors = numpy.zeros(3), numpy.zeros((3, 3))
+    eigenvalues, eigenvectors = numpy.linalg.eigh(covariance)
 
     print("Exercice 2.1: Calcul des valeurs propres et vecteurs propres")
     viz.print_gaussian_model(mean, covariance, eigenvalues, eigenvectors)
@@ -51,7 +52,15 @@ def exercice_2_decorrelation():
     decorrelated_samples = analysis.project_onto_new_basis(samples, first_principal_component)  # Complétez la fonction project_onto_new_basis dans analysis.py
 
     representation = dataset.Representation(data=decorrelated_samples, labels=numpy.array(["Data"] * decorrelated_samples.shape[0]))
-    viz.plot_pdf(representation, n_bins=10, title="Projection des données sur la 1er composante")
+    #viz.plot_pdf(representation, n_bins=10, title="Projection des données sur la 1er composante")
+    plt.figure()
+    histogram, bin_edges = numpy.histogram(decorrelated_samples, bins=30, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    plt.bar(bin_centers, histogram, width=bin_edges[1] - bin_edges[0], alpha=0.6, color='g', label='Données projetées')
+    plt.title("Projection des données sur la 1ère composante principale")
+    plt.xlabel("Valeur projetée")
+    plt.ylabel("Densité de probabilité")
+    plt.legend()
     # -------------------------------------------------------------------------
 
     # L1.E2.6 Projetez la représentation des données sur les 2e et 3e composantes principales
@@ -103,8 +112,8 @@ def exercice_3_visualisation_representation():
     # L1.E3.4 Calculer les variances sur chaque dimension pour la classe C1 ainsi que leur corrélations
     # -------------------------------------------------------------------------
     data_C1 = reprensentation.get_class("C1")
-    variances = numpy.zeros(data_C1.shape[1])                           # Utilisez la fonction appropriée pour calculer les variances
-    correlations = numpy.zeros((data_C1.shape[1], data_C1.shape[1]))    # Utilisez la fonction appropriée pour calculer les corrélations
+    variances = numpy.var(data_C1)
+    correlations = numpy.corrcoef(data_C1)    # Utilisez la fonction appropriée pour calculer les corrélations
     print("Exercice 3.4: Variances et corrélations pour la classe C1")
     print(f"Variances : {variances}")
     print(f"Corrélations : \n{correlations}")
@@ -116,12 +125,13 @@ def exercice_3_visualisation_representation():
 
     # Utilisez la fonction appropriée pour projeter les données sur la nouvelle base
     # Indice: Utilisez la fonction project_onto_new_basis définie précédement pour créer une nouvelle représentation des données
-    decorrelated_data = numpy.zeros_like(data3classes.data)
+    decorrelated_data = analysis.project_onto_new_basis(data3classes.data, eigenvectors_C1)
     decorrelated_representation = dataset.Representation(data=decorrelated_data, labels=data3classes.labels)
 
     print("\nExercice 3.6: Données décorrelées de la classe C1")
     decorrelated_data_C1 = decorrelated_representation.get_class("C1")
     _, covariance_decorrelated, _, _ = analysis.compute_gaussian_model(decorrelated_data_C1)
+
     print(f"Matrice de covariance des données décorrelées : \n{covariance_decorrelated}")
     # -------------------------------------------------------------------------
 
@@ -233,9 +243,9 @@ def exercice_4_choix_representation():
 def main():
     # pylint: disable = using-constant-test, multiple-statements
 
-    if True: exercice_2_decorrelation()
+    if False: exercice_2_decorrelation()
     if True: exercice_3_visualisation_representation()
-    if True: exercice_4_choix_representation()
+    if False: exercice_4_choix_representation()
 
 
 if __name__ == "__main__":
