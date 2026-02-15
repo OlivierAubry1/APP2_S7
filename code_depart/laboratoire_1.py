@@ -178,6 +178,13 @@ def exercice_4_choix_representation():
 
     # Visualiez les histogrammes des images dans les différents espaces de couleur
     # Indice: vous pouvez réutiliser la fonction viz.plot_images_histograms
+    viz.plot_images_histograms(samples_hsv, n_bins=256, 
+                              title="Histogrammes des intensités de pixels HSV",
+                              x_label="Valeur",
+                              y_label="Nombre de pixels",
+                              channel_names=['Hue', 'Sat', 'Val'],
+                              colors=['r', 'g', 'b'])
+    
 
     # -------------------------------------------------------------------------
 
@@ -185,14 +192,14 @@ def exercice_4_choix_representation():
     # =========================================================================
     features = numpy.zeros((len(images), 6)) # 3 moyennes + 3 écarts-types
     for i, (image, _) in enumerate(images):
-        channels_mean = numpy.zeros(3)  # Calculer la moyenne de chaque canal R, G et B
+        channels_mean = numpy.mean(image, axis=(0,1))  # Calculer la moyenne de chaque canal R, G et B
 
         # L1.E4.7 Répéter pour une autre métrique de votre choix
         # ---------------------------------------------------------------------
-        other_feature = numpy.zeros(3)  # Calculer une autre métrique de votre choix
+        ecart_type = numpy.std(image, axis=(0,1))  # Calculer une autre métrique de votre choix
         # ---------------------------------------------------------------------
 
-        features[i] = numpy.concatenate((channels_mean, other_feature))
+        features[i] = numpy.concatenate((channels_mean, ecart_type))
 
     features = numpy.array(features)
     # =========================================================================
@@ -213,17 +220,17 @@ def exercice_4_choix_representation():
                                   ylabel="Nombre d'images")
 
     # Complétez l'affichage pour la métrique au choix
-    representation_other_feature = dataset.Representation(data=features[:, 3:], labels=images.labels)
-    viz.plot_data_distribution(representation_other_feature,
-                               title="Distribution des images basée sur la métrique au choix",
-                               xlabel="Rouge",
-                               ylabel="Verte",
-                               zlabel="Bleue")
+    representation_ecart_type = dataset.Representation(data=features[:, 3:], labels=images.labels)
+    viz.plot_data_distribution(representation_ecart_type,
+                               title="Distribution basée sur les ÉCARTS-TYPES",
+                               xlabel="Std Rouge",
+                               ylabel="Std Vert",
+                               zlabel="Std Bleu")
 
-    viz.plot_features_distribution(representation_other_feature, n_bins=32,
-                                  title="Histogrammes de la métrique au choix",
-                                  features_names=["Rouge", "Vert", "Bleu"],
-                                  xlabel="Valeur",
+    viz.plot_features_distribution(representation_ecart_type, n_bins=32,
+                                  title="Histogrammes des ÉCARTS-TYPES",
+                                  features_names=["Std Rouge", "Std Vert", "Std Bleu"],
+                                  xlabel="Écart-type",
                                   ylabel="Nombre d'images")
 
     # Étude de la corrélations
@@ -244,8 +251,8 @@ def main():
     # pylint: disable = using-constant-test, multiple-statements
 
     if False: exercice_2_decorrelation()
-    if True: exercice_3_visualisation_representation()
-    if False: exercice_4_choix_representation()
+    if False: exercice_3_visualisation_representation()
+    if True: exercice_4_choix_representation()
 
 
 if __name__ == "__main__":
