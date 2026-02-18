@@ -93,11 +93,24 @@ def main():
     # -------------------------------------------------------------------------
     # dimension 0, 1, 2
     representation = dataset.Representation(data=data[:, [0, 1, 2]], labels=labels)
-    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 1, 2, 3)", xlabel="Caractéristique 1", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
-
+    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 1, 2)", xlabel="Caractéristique 0", ylabel="Caractéristique 1", zlabel="Caractéristique 2")
+    
     # dimension i, j, k
-
+    representation = dataset.Representation(data=data[:, [1, 2, 3]], labels=labels)
+    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 1, 2, 3)", xlabel="Caractéristique 1", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
+    
     # -----------------------------------------------------------------
+    # dimension i, j, k
+    representation = dataset.Representation(data=data[:, [0, 2, 3]], labels=labels)
+    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 2, 3)", xlabel="Caractéristique 0", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
+    
+    # -----------------------------------------------------------------
+    # dimension i, j, k
+    representation = dataset.Representation(data=data[:, [0, 1, 3]], labels=labels)
+    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 1, 3)", xlabel="Caractéristique 0", ylabel="Caractéristique 1", zlabel="Caractéristique 3")
+    
+    # -----------------------------------------------------------------
+
 
     plt.show()
 
@@ -178,7 +191,7 @@ def main():
         train_data, train_labels,
         batch_size=16,
         shuffle=True,
-        epochs=10,
+        epochs=500,
         callbacks=callbacks,
         verbose=True
     )
