@@ -167,22 +167,25 @@ def main():
     # -------------------------------------------------------------------------
     model = keras.models.Sequential()
     model.add(keras.layers.InputLayer(input_shape=(scaled_data.shape[-1],)))
-    model.add(keras.layers.Dense(units=8, activation="tanh"))
-    model.add(keras.layers.Dense(units=6, activation="tanh"))
-    model.add(keras.layers.Dense(units=4, activation="tanh"))
-    model.add(keras.layers.Dense(units=3, activation="tanh"))
-    model.add(keras.layers.Dense(units=2, activation="tanh"))
-    model.add(keras.layers.Dense(units=labels_one_hot.shape[-1], activation="tanh"))
+    
+    # Wider layers to capture patterns, using ReLU
+    model.add(keras.layers.Dense(units=16, activation="relu"))
+    model.add(keras.layers.Dense(units=16, activation="relu"))
+    
+    # Output layer: MUST match the number of classes (3)
+    # MUST use softmax for multi-class classification
+    model.add(keras.layers.Dense(units=labels_one_hot.shape[-1], activation="softmax"))
+    
     print(model.summary())
-    # -------------------------------------------------------------------------
 
-    # L2.E3.4 Testez plusieurs configurations d'optimisateur, de taux d'apprentissage et de fonction de coût.
+    # L2.E3.4 Optimisateur Adam et CategoricalCrossentropy
     # -------------------------------------------------------------------------
     model.compile(
-        optimizer=keras.optimizers.SGD(learning_rate=0.001, momentum=0.01),
-        loss=keras.losses.MeanSquaredError(),
+        optimizer=keras.optimizers.Adam(learning_rate=0.01), # Faster than SGD
+        loss=keras.losses.CategoricalCrossentropy(),         # Standard for multi-class
         metrics=["accuracy"]
     )
+    # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
 
     # Entrainement du modèle
@@ -195,7 +198,7 @@ def main():
         train_data, train_labels,
         batch_size=16,
         shuffle=True,
-        epochs=2000,
+        epochs=500,
         callbacks=callbacks,
         verbose=True
     )
