@@ -138,7 +138,7 @@ def problematique():
     modele.add(keras.layers.Dense(units=16, activation='relu'))
     modele.add(keras.layers.Dense(units=3, activation='softmax'))
 
-    descente_gradient = keras.optimizers.SGD(learning_rate=0.1, momentum = 0.9)
+    descente_gradient = keras.optimizers.SGD(learning_rate=0.08, momentum = 0.01)
 
     modele.compile(
         optimizer=descente_gradient,
