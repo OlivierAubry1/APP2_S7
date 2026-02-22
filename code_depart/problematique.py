@@ -26,16 +26,21 @@ def problematique():
     features = np.zeros((len(images), 6))
     
     for i, (image, label) in enumerate(images):
-        hsv_image = skimage.color.rgb2hsv(image / 255.0)
+        hsv_image = skimage.color.rgb2hsv(image / 255.0) #transformer img en hsv
         height = image.shape[0]
-        top_part = image[:height//3, :, :]
+        top_part = image[:height//3, :, :]  #couper le haut pour mesurer le ciel
         
-        feat_saturation = np.mean(hsv_image[:, :, 1])
-        feat_hue = np.mean(hsv_image[:, :, 0])
-        feat_texture = np.std(hsv_image[:, :, 2])
-        feat_top_blue = np.mean(top_part[:, :, 2])
-        feat_green = np.mean(image[:, :, 1])
-        feat_red = np.mean(image[:, :, 0])
+        feat_saturation = np.mean(hsv_image[:, :, 1])   #moy du canal saturation s dans hsv
+        feat_hue = np.mean(hsv_image[:, :, 0])          #moy du canal hue h dans 
+
+        #important: écart type de luminosité (V) dans hsv. on mesure à quelle point les pixels sont constants dans leur luminosité.
+        # Ex: ciel bleu a une texture basse(en théorie), pcq tous les pixels on un V (luminosité similaires.) 
+        # Ex: Forêt avec des ombres et des feuilles texture hautes pcq la luminosité des pixels alterne bcp plus 
+
+        feat_texture = np.std(hsv_image[:, :, 2])       
+        feat_top_blue = np.mean(top_part[:, :, 2])  #mesure la moyenne des pixels bleu dans le haut de l'image
+        feat_green = np.mean(image[:, :, 1])        #vert global
+        feat_red = np.mean(image[:, :, 0])          #rouge global
         
         features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_red]
 
