@@ -11,6 +11,10 @@ import skimage
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+import tensorflow as tf
+
 import helpers.analysis as analysis
 import helpers.dataset as dataset
 import helpers.viz as viz
@@ -30,13 +34,13 @@ def problematique():
         height = image.shape[0]
         top_part = image[:height//3, :, :]  #couper le haut pour mesurer le ciel
         
+        #-----------features------------------
+
         feat_saturation = np.mean(hsv_image[:, :, 1])   #moy du canal saturation s dans hsv
         feat_hue = np.mean(hsv_image[:, :, 0])          #moy du canal hue h dans 
-
         #important: écart type de luminosité (V) dans hsv. on mesure à quelle point les pixels sont constants dans leur luminosité.
         # Ex: ciel bleu a une texture basse(en théorie), pcq tous les pixels on un V (luminosité similaires.) 
         # Ex: Forêt avec des ombres et des feuilles texture hautes pcq la luminosité des pixels alterne bcp plus 
-
         feat_texture = np.std(hsv_image[:, :, 2])       
         feat_top_blue = np.mean(top_part[:, :, 2])  #mesure la moyenne des pixels bleu dans le haut de l'image
         feat_green = np.mean(image[:, :, 1])        #vert global
@@ -116,7 +120,51 @@ def problematique():
     # TODO: Problématique: Comparez différents classificateurs sur cette
     # représentation, comme dans le laboratoire 2 et 3.
     # -------------------------------------------------------------------------
-    # 
+    # ---------------NN--------------------------------------------------------
+    encodeur = LabelEncoder()
+    y_encode = encodeur.fit_transform(images.labels)
+    y_one_hot = tf.keras.utils.to_categorical(y_encode)
+
+    X_pca_final = decorrelated_data[:, :4]
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_pca_final, y_one_hot, test_size=0.3, random_state=42
+    )
+
+    modele = tf.keras.models.Sequential()
+    modele.add(tf.keras.layers.Dense(units=16, activation='relu', input_shape=(X_train.shape[1],)))
+    modele.add(tf.keras.layers.Dense(units=8, activation='relu', input_shape=(X_train.shape[1],)))
+    modele.add(tf.keras.layers.Dense(units=3, activation='softmax'))
+
+    descente_gradient = tf.keras.optimizers.SGD(learning_rate=0.1)
+
+    modele.compile(
+        optimizer=descente_gradient,
+        loss='mean_squared_error',
+        metrics=['accuracy']
+    )
+
+    historique = modele.fit(
+        X_train, y_train,
+        epochs=750,
+        batch_size=len(X_train),
+        validation_data=(X_val, y_val),
+        verbose=1
+    )
+
+    viz.plot_metric_history(historique)
+
+    predictions_prob = modele.predict(X_val)
+    predictions_classes = np.argmax(predictions_prob, axis=-1)
+    y_val_classes = np.argmax(y_val, axis=-1)
+
+    noms_classes = encodeur.classes_
+
+    error_rate, indexes_errors = analysis.compute_error_rate(y_val_classes, predictions_classes)
+    print(f"\n\n{len(indexes_errors)} erreurs de classification sur {len(y_val)} échantillons de validation ({error_rate * 100:.2f}%).")
+
+    viz.show_confusion_matrix(y_val_classes, predictions_classes, noms_classes, plot=True)
+    plt.show()
     # -------------------------------------------------------------------------
 
 
