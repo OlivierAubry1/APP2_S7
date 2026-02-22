@@ -1,22 +1,111 @@
+import os
+import itertools
 
-import numpy
+import matplotlib.pyplot as plt
+import numpy as np
+import skimage
 
+# Must be call before any other TensorFlow/Keras import
+# Suppress oneDNN custom operations info
+# Suppress INFO and WARNING messages from TF (0=all, 1=no INFO, 2=no INFO/WARN, 3=no error)
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+import helpers.analysis as analysis
 import helpers.dataset as dataset
+import helpers.viz as viz
 
 
 def problematique():
-    images = dataset.ImageDataset("data/image_dataset/")
+    images = dataset.ImageDataset("code_depart/data/image_dataset/")
 
     # TODO Problématique: Générez une représentation des images appropriée
     # pour la classification comme dans le laboratoire 1.
     # -------------------------------------------------------------------------
-    features = numpy.zeros((len(images), 3), dtype=numpy.float32) # (représentation fictive, à remplacer)
-    representation = dataset.Representation(data=features, labels=images.labels)
+
+    features = np.zeros((len(images), 6))
+    
+    for i, (image, label) in enumerate(images):
+        hsv_image = skimage.color.rgb2hsv(image / 255.0)
+        height = image.shape[0]
+        top_part = image[:height//3, :, :]
+        
+        feat_saturation = np.mean(hsv_image[:, :, 1])
+        feat_hue = np.mean(hsv_image[:, :, 0])
+        feat_texture = np.std(hsv_image[:, :, 2])
+        feat_top_blue = np.mean(top_part[:, :, 2])
+        feat_green = np.mean(image[:, :, 1])
+        feat_red = np.mean(image[:, :, 0])
+        
+        features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_red]
+
+    features_mean = np.mean(features, axis=0)
+    features_std = np.std(features, axis=0) + 1e-8
+    features_normalized = (features - features_mean) / features_std
+    
     # -------------------------------------------------------------------------
 
     # TODO: Problématique: Visualisez cette représentation
     # -------------------------------------------------------------------------
-    # 
+    representation_raw = dataset.Representation(data=features_normalized, labels=images.labels)
+    
+    viz.plot_features_distribution(representation_raw, n_bins=32,
+                                  title="Distribution des features normalisées",
+                                  features_names=["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Rouge_Global"],
+                                  xlabel="Valeur", ylabel="Nombre d'images")
+
+    feature_names = ["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Rouge_Global"]
+    
+    n_features = features_normalized.shape[1]
+    fig, axes = plt.subplots(n_features, n_features, figsize=(15, 15))
+    fig.canvas.manager.set_window_title('Matrice de dispersion 2D (Pairplot)')
+
+    labels_uniques = np.unique(images.labels)
+    couleurs = ['#FFA500', '#800080', '#808080']
+
+    for i in range(n_features):
+        for j in range(n_features):
+            ax = axes[i, j]
+            
+            if i == j:
+                for k, label in enumerate(labels_uniques):
+                    indices = np.where(images.labels == label)[0]
+                    ax.hist(features_normalized[indices, i], bins=20, color=couleurs[k], alpha=0.5, density=True)
+            else:
+                for k, label in enumerate(labels_uniques):
+                    indices = np.where(images.labels == label)[0]
+                    ax.scatter(features_normalized[indices, j], features_normalized[indices, i], 
+                               c=couleurs[k], label=label if (i==0 and j==1) else "", 
+                               alpha=0.4, s=5, edgecolors='none')
+            
+            if i == n_features - 1:
+                ax.set_xlabel(feature_names[j], fontsize=8)
+            else:
+                ax.set_xticks([])
+                
+            if j == 0:
+                ax.set_ylabel(feature_names[i], fontsize=8)
+            else:
+                ax.set_yticks([])
+
+    fig.legend(loc='upper right', bbox_to_anchor=(0.95, 0.95))
+    plt.tight_layout()
+
+    covariance_matrix = np.cov(features_normalized, rowvar=False)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+    idx = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:, idx]
+    
+    decorrelated_data = analysis.project_onto_new_basis(features_normalized, eigenvectors)
+    representation_pca = dataset.Representation(data=decorrelated_data, labels=images.labels)
+    
+    viz.plot_features_distribution(representation_pca, n_bins=32,
+                                  title="Composantes Principales (PCA)",
+                                  features_names=["PC1", "PC2", "PC3", "PC4", "PC5", "PC6"],
+                                  xlabel="Valeur projetée", ylabel="Nombre d'images")
+                                  
+    plt.show()
     # -------------------------------------------------------------------------
 
     # TODO: Problématique: Comparez différents classificateurs sur cette
