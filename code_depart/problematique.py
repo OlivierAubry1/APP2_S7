@@ -4,6 +4,7 @@ import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage
+import pathlib
 
 # Must be call before any other TensorFlow/Keras import
 # Suppress oneDNN custom operations info
@@ -13,7 +14,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import tensorflow as tf
+import keras
 
 import helpers.analysis as analysis
 import helpers.dataset as dataset
@@ -21,7 +22,8 @@ import helpers.viz as viz
 
 
 def problematique():
-    images = dataset.ImageDataset("code_depart/data/image_dataset/")
+    img_path = pathlib.Path(__file__).parent / "data/image_dataset/"
+    images = dataset.ImageDataset(img_path)
 
     # TODO Problématique: Générez une représentation des images appropriée
     # pour la classification comme dans le laboratoire 1.
@@ -123,20 +125,20 @@ def problematique():
     # ---------------NN--------------------------------------------------------
     encodeur = LabelEncoder()
     y_encode = encodeur.fit_transform(images.labels)
-    y_one_hot = tf.keras.utils.to_categorical(y_encode)
+    y_one_hot = keras.utils.to_categorical(y_encode)
 
-    X_pca_final = decorrelated_data[:, :4]
+    X_pca_final = decorrelated_data[:, :6]
 
     X_train, X_val, y_train, y_val = train_test_split(
         X_pca_final, y_one_hot, test_size=0.3, random_state=42
     )
 
-    modele = tf.keras.models.Sequential()
-    modele.add(tf.keras.layers.Dense(units=16, activation='relu', input_shape=(X_train.shape[1],)))
-    modele.add(tf.keras.layers.Dense(units=8, activation='relu', input_shape=(X_train.shape[1],)))
-    modele.add(tf.keras.layers.Dense(units=3, activation='softmax'))
+    modele = keras.models.Sequential()
+    modele.add(keras.layers.Dense(units=32, activation='relu', input_shape=(X_train.shape[1],)))
+    modele.add(keras.layers.Dense(units=16, activation='relu'))
+    modele.add(keras.layers.Dense(units=3, activation='softmax'))
 
-    descente_gradient = tf.keras.optimizers.SGD(learning_rate=0.1)
+    descente_gradient = keras.optimizers.SGD(learning_rate=0.1, momentum = 0.9)
 
     modele.compile(
         optimizer=descente_gradient,
@@ -151,10 +153,15 @@ def problematique():
         validation_data=(X_val, y_val),
         verbose=1
     )
+    model_save_path = pathlib.Path(__file__).parent / "saves" / "NN_class_prob.keras"
+    modele.save(model_save_path)
 
     viz.plot_metric_history(historique)
 
-    predictions_prob = modele.predict(X_val)
+    loaded_model = keras.models.load_model(model_save_path)
+
+
+    predictions_prob = loaded_model.predict(X_val)
     predictions_classes = np.argmax(predictions_prob, axis=-1)
     y_val_classes = np.argmax(y_val, axis=-1)
 
