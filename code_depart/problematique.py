@@ -29,7 +29,7 @@ def problematique():
     # pour la classification comme dans le laboratoire 1.
     # -------------------------------------------------------------------------
 
-    features = np.zeros((len(images), 7))
+    features = np.zeros((len(images), 8))
     
     for i, (image, label) in enumerate(images):
         image_norm = image / 255.0
@@ -41,6 +41,13 @@ def problematique():
 
         edges = skimage.filters.sobel(gray_image)
         edges = np.abs(edges)
+
+        edge_h = skimage.filters.sobel_h(gray_image)
+        edge_v = skimage.filters.sobel_v(gray_image)
+
+        sum_h = np.sum(np.abs(edge_h))
+        sum_v = np.sum(np.abs(edge_v))
+        
         
 
         #-----------features------------------
@@ -53,9 +60,11 @@ def problematique():
         #feat_red = np.mean(image[:, :, 0])
         feat_edges = np.mean(edges)
         feat_texture_sobel = np.std(edges)
+        feat_ratio = sum_v / (sum_h + sum_v + 1e-6)
+
      
         
-        features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_edges, feat_texture_sobel]
+        features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_edges, feat_texture_sobel, feat_ratio]
 
     features_mean = np.mean(features, axis=0)
     features_std = np.std(features, axis=0) + 1e-8
@@ -66,7 +75,7 @@ def problematique():
     # TODO: Problématique: Visualisez cette représentation
     # -------------------------------------------------------------------------
     representation_raw = dataset.Representation(data=features_normalized, labels=images.labels)
-    feature_names = ["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Edges Sobel", "Texture Sobel"]
+    feature_names = ["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Edges Sobel", "Texture Sobel", "Ratio  sobel"]
     
     viz.plot_features_distribution(representation_raw, n_bins=32,
                                   title="Distribution des features normalisées",
@@ -121,7 +130,7 @@ def problematique():
     
     viz.plot_features_distribution(representation_pca, n_bins=32,
                                   title="Composantes Principales (PCA)",
-                                  features_names=["PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7"],
+                                  features_names=["PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8"],
                                   xlabel="Valeur projetée", ylabel="Nombre d'images")
                                   
     plt.show()
