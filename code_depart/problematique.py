@@ -29,26 +29,29 @@ def problematique():
     # pour la classification comme dans le laboratoire 1.
     # -------------------------------------------------------------------------
 
-    features = np.zeros((len(images), 6))
+    features = np.zeros((len(images), 7))
     
     for i, (image, label) in enumerate(images):
-        hsv_image = skimage.color.rgb2hsv(image / 255.0) #transformer img en hsv
+        image_norm = image / 255.0
+        hsv_image = skimage.color.rgb2hsv(image_norm)
+        gray_image = skimage.color.rgb2gray(image_norm)
+
         height = image.shape[0]
-        top_part = image[:height//3, :, :]  #couper le haut pour mesurer le ciel
-        
+        top_part = image[:height//3, :, :]
+
+        edges = skimage.filters.sobel(gray_image)
+
         #-----------features------------------
 
-        feat_saturation = np.mean(hsv_image[:, :, 1])   #moy du canal saturation s dans hsv
-        feat_hue = np.mean(hsv_image[:, :, 0])          #moy du canal hue h dans 
-        #important: écart type de luminosité (V) dans hsv. on mesure à quelle point les pixels sont constants dans leur luminosité.
-        # Ex: ciel bleu a une texture basse(en théorie), pcq tous les pixels on un V (luminosité similaires.) 
-        # Ex: Forêt avec des ombres et des feuilles texture hautes pcq la luminosité des pixels alterne bcp plus 
+        feat_saturation = np.mean(hsv_image[:, :, 1])
+        feat_hue = np.mean(hsv_image[:, :, 0]) 
         feat_texture = np.std(hsv_image[:, :, 2])       
-        feat_top_blue = np.mean(top_part[:, :, 2])  #mesure la moyenne des pixels bleu dans le haut de l'image
-        feat_green = np.mean(image[:, :, 1])        #vert global
-        feat_red = np.mean(image[:, :, 0])          #rouge global
+        feat_top_blue = np.mean(top_part[:, :, 2])
+        feat_green = np.mean(image[:, :, 1])
+        feat_red = np.mean(image[:, :, 0])
+        feat_edges = np.mean(edges) 
         
-        features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_red]
+        features[i] = [feat_saturation, feat_hue, feat_texture, feat_top_blue, feat_green, feat_red, feat_edges]
 
     features_mean = np.mean(features, axis=0)
     features_std = np.std(features, axis=0) + 1e-8
@@ -59,16 +62,17 @@ def problematique():
     # TODO: Problématique: Visualisez cette représentation
     # -------------------------------------------------------------------------
     representation_raw = dataset.Representation(data=features_normalized, labels=images.labels)
+    feature_names = ["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Rouge_Global", "Edges Sobel"]
     
     viz.plot_features_distribution(representation_raw, n_bins=32,
                                   title="Distribution des features normalisées",
-                                  features_names=["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Rouge_Global"],
+                                  features_names=feature_names,
                                   xlabel="Valeur", ylabel="Nombre d'images")
 
-    feature_names = ["Saturation", "Teinte", "Texture", "Bleu_Haut", "Vert_Global", "Rouge_Global"]
+   
     
     n_features = features_normalized.shape[1]
-    fig, axes = plt.subplots(n_features, n_features, figsize=(15, 15))
+    fig, axes = plt.subplots(n_features, n_features, figsize=(18, 18))
     fig.canvas.manager.set_window_title('Matrice de dispersion 2D (Pairplot)')
 
     labels_uniques = np.unique(images.labels)
@@ -113,7 +117,7 @@ def problematique():
     
     viz.plot_features_distribution(representation_pca, n_bins=32,
                                   title="Composantes Principales (PCA)",
-                                  features_names=["PC1", "PC2", "PC3", "PC4", "PC5", "PC6"],
+                                  features_names=["PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7"],
                                   xlabel="Valeur projetée", ylabel="Nombre d'images")
                                   
     plt.show()
