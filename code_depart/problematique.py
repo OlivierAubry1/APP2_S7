@@ -226,6 +226,15 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
+def knn(n_neighbors, representation, use_kmeans, n_representatives):
+    knn_classifier = classifier.KNNClassifier(n_neighbors=n_neighbors, use_kmeans=use_kmeans, n_representatives=n_representatives)
+    knn_classifier.fit(representation)
+    predictions = knn_classifier.predict(representation.data)
+
+    error_rate, error_indices = analysis.compute_error_rate(representation.labels, predictions)
+    print(
+        f"\n\n{len(error_indices)} erreur de classification sur {len(representation.labels)} échantillons ({error_rate * 100:.2f} %)")
+
 
 def problematique():
     dataset_path = pathlib.Path(__file__).parent / "data" / "image_dataset"
@@ -315,7 +324,18 @@ def problematique():
     # plt.show()
     
     #train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
-    train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    #train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    print("\n" + "="*50)
+    print("--- Entraînement du Classificateur KNN ---")
+    
+    # On crée l'objet Representation avec les données d'entraînement projetées
+    # (Puisque ta fonction s'évalue elle-même sur representation.data)
+    y_train_integers = np.argmax(y_train, axis=-1)
+    knn_representation = dataset.Representation(data=X_train_pca, labels=y_train_integers)
+    
+
+    knn(5, knn_representation, use_kmeans=False, n_representatives=5)
+    knn(12, knn_representation, use_kmeans=True, n_representatives=24)
 
 if __name__ == "__main__":
     problematique()
