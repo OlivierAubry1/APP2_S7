@@ -12,7 +12,7 @@ import helpers.viz as viz
 import matplotlib.pyplot as plt
 from skimage import filters, color
 
-from helpers import analysis
+from helpers import analysis, classifier
 
 
 def to_grayscale(img):
@@ -149,6 +149,8 @@ def train_eval_nn(X_train, X_val, y_train, y_val, class_labels):
     Configure, entraîne et évalue le réseau de neurones avec des données pré-séparées.
     """
     # L2.E3.4 Network Configuration
+    print("\n" + "="*50)
+    print("--- Entraînement du Réseau de Neurones ---")
     model = keras.models.Sequential([
         keras.layers.InputLayer(shape=(X_train.shape[-1],)),
         keras.layers.Dense(units=32, activation="relu"),
@@ -183,6 +185,44 @@ def train_eval_nn(X_train, X_val, y_train, y_val, class_labels):
     error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
 
     print(f"\n\n{len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}%).")
+    viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
+    plt.show()
+
+def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
+    """
+    Configure, entraîne et évalue le classificateur Bayésien
+    """
+    print("\n" + "="*50)
+    print("--- Entraînement du Classificateur Bayésien ---")
+    
+    # 1. Reconvertir les étiquettes one-hot en entiers (0, 1, 2)
+    y_train_integers = np.argmax(y_train, axis=-1)
+    y_val_integers = np.argmax(y_val, axis=-1)
+    
+    # 2. Créer l'objet Representation attendu par la méthode fit()
+    train_representation = dataset.Representation(data=X_train, labels=y_train_integers)
+    
+    # 3. Définir les aprioris et la matrice de coûts (équiprobables et coûts unitaires par défaut)
+    n_classes = len(class_labels)
+    aprioris = np.array([1 / n_classes] * n_classes)
+    cost_matrix = np.ones((n_classes, n_classes)) - np.eye(n_classes)
+    
+    bayes_classifier = classifier.BayesClassifier(
+        aprioris=aprioris, 
+        cost_matrix=cost_matrix, 
+        density_function=analysis.GaussianPDF
+    )
+    
+    bayes_classifier.fit(train_representation)
+
+    prediction = bayes_classifier.predict(X_val)
+    
+    # 7. Évaluer et afficher les performances
+    error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
+    
+    print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
+    
+    # Affichage de la matrice de confusion
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
@@ -273,9 +313,9 @@ def problematique():
     # viz.plot_data_distribution(representation_pca, title="Données projetées sur les 3 composantes PCA",
     #                            xlabel="PC 1", ylabel="PC 2", zlabel="PC 3")
     # plt.show()
-
-    # Appel de la fonction pour le réseau de neurones avec les données propres
-    train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    
+    #train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
 
 if __name__ == "__main__":
     problematique()
