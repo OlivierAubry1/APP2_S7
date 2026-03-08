@@ -262,7 +262,7 @@ class HistogramPDF(ProbabilityDensityFunction):
         # L3.S2.1 Construire un modèle empirique de densité de probabilité pour chacune des classes
         # (Utilisez numpy.histogramdd, retirez les tenseur nulles et les 1 suspect)
         # ---------------------------------------------------------------------
-        self.histogram, self.bin_edges = numpy.histogramdd(numpy.zeros_like(data), bins=1, density=True)
+        self.histogram, self.bin_edges = numpy.histogramdd(data, bins=self.n_bins, density=True)        
         # ---------------------------------------------------------------------
 
     def compute_probability(self, data: numpy.ndarray) -> numpy.ndarray:
@@ -274,5 +274,31 @@ class HistogramPDF(ProbabilityDensityFunction):
         """
         # L3.S2.2 Compléter la méthode pour calculer la probabilité d'appartenir à cette classe
         # ---------------------------------------------------------------------
-        return numpy.zeros(data.shape[0])
+        probs = numpy.zeros(data.shape[0])
+        indices = []
+        out_of_bounds = numpy.zeros(data.shape[0], dtype=bool)
+
+        # Pour chaque dimension (colonne) des données
+        for i in range(data.shape[1]):
+            # digitize renvoie l'index du bac. On fait -1 car les index numpy commencent à 0
+            idx = numpy.digitize(data[:, i], self.bin_edges[i]) - 1
+            
+            # Si le point est en dehors des limites d'entraînement, il est "out of bounds"
+            out_of_bounds |= (idx < 0) | (idx >= len(self.bin_edges[i]) - 1)
+            
+            # On "clip" les index pour éviter un IndexError lors de l'accès au tableau.
+            # Les valeurs hors limites recevront de toute façon une probabilité de 0 à la fin.
+            idx = numpy.clip(idx, 0, len(self.bin_edges[i]) - 2)
+            indices.append(idx)
+
+        # On convertit la liste d'index en tuple pour indexer la matrice multi-dimensionnelle
+        indices = tuple(indices)
+        
+        # On récupère les probabilités depuis l'histogramme
+        probs = self.histogram[indices]
+        
+        # On force à 0 la probabilité des points qui étaient hors de la grille
+        probs[out_of_bounds] = 0.0
+
+        return probs
         # ---------------------------------------------------------------------

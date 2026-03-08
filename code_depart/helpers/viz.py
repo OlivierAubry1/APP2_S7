@@ -540,9 +540,10 @@ def add_ellipse(ax: plt.Axes, model: GaussianModel):
         val1, val2 = model.eigenvalues[list(plane)]
         vec1, vec2 = model.eigenvectors[:, list(plane)].T
 
+        # On remplace les 1 par val1 et val2 (les valeurs propres)
         ellipse = numpy.vstack([
-            numpy.sqrt(1) * numpy.cos(theta),
-            numpy.sqrt(1) * numpy.sin(theta)
+            numpy.sqrt(val1) * numpy.cos(theta),
+            numpy.sqrt(val2) * numpy.sin(theta)
         ])
         # ---------------------------------------------------------------------
 

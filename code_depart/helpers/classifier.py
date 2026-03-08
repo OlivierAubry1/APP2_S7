@@ -124,6 +124,18 @@ class BayesClassifier(Classifier):
         # L3.E3.2 Compléter cette fonction pour déployer le classificateur en assumant des classe équiprobables à coût unitaire
         # L3.S1 Modifier cette partie pour prendre en compte la matrice de coût et des classes non équiprobables
         # ---------------------------------------------------------------------
+        # 1. Calculer P(x|C_j) * P(C_j)
+        # class_probabilities.T est de dimension (n_samples, n_classes)
+        # self.aprioris est de dimension (n_classes,)
+        unnormalized_posteriors = class_probabilities.T * self.aprioris
+        
+        # 2. Minimiser le risque : R(a_i | x) = sum_j ( Cout_ij * P(C_j | x) )
+        # On utilise le produit matriciel : (n_samples, n_classes) @ (n_classes, n_classes).T
+        risks = numpy.matmul(unnormalized_posteriors, self.cost_matrix.T)
+        
+        # 3. La prédiction est la classe qui minimise ce risque
+        predictions = numpy.argmin(risks, axis=1)
+        # ---------------------------------------------------------------------
         risks = numpy.zeros((data.shape[0], len(self.densities)))
 
         # Ici, argmax de la probabilité assume des coûts unitaires et des aprioris égaux
