@@ -226,15 +226,18 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
-def knn(n_neighbors, representation, use_kmeans, n_representatives):
+def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_representatives):
+    # On instancie
     knn_classifier = classifier.KNNClassifier(n_neighbors=n_neighbors, use_kmeans=use_kmeans, n_representatives=n_representatives)
-    knn_classifier.fit(representation)
-    predictions = knn_classifier.predict(representation.data)
-
-    error_rate, error_indices = analysis.compute_error_rate(representation.labels, predictions)
-    print(
-        f"\n\n{len(error_indices)} erreur de classification sur {len(representation.labels)} échantillons ({error_rate * 100:.2f} %)")
-
+    
+    # On entraîne sur les données d'entraînement
+    knn_classifier.fit(train_representation)
+    
+    # MODIFICATION CRITIQUE : On prédit et on évalue sur les données de validation !
+    predictions = knn_classifier.predict(val_data)
+    error_rate, error_indices = analysis.compute_error_rate(val_labels, predictions)
+    
+    print(f"\n\n{len(error_indices)} erreur de classification sur {len(val_labels)} échantillons ({error_rate * 100:.2f} %)")
 
 def problematique():
     dataset_path = pathlib.Path(__file__).parent / "data" / "image_dataset"
@@ -323,19 +326,39 @@ def problematique():
     #                            xlabel="PC 1", ylabel="PC 2", zlabel="PC 3")
     # plt.show()
     
+    # =====================Réseau neurones====================================================
     #train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+
+    # ===========================Bayes==============================================
     #train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+
+    # ==============================KNN===========================================
     print("\n" + "="*50)
     print("--- Entraînement du Classificateur KNN ---")
     
-    # On crée l'objet Representation avec les données d'entraînement projetées
-    # (Puisque ta fonction s'évalue elle-même sur representation.data)
     y_train_integers = np.argmax(y_train, axis=-1)
     knn_representation = dataset.Representation(data=X_train_pca, labels=y_train_integers)
     
 
-    knn(5, knn_representation, use_kmeans=False, n_representatives=5)
-    knn(12, knn_representation, use_kmeans=True, n_representatives=24)
-
+    y_val_integers = np.argmax(y_val, axis=-1)
+    
+    
+    knn(
+        n_neighbors=5, 
+        train_representation=knn_representation, 
+        val_data=X_val_pca, 
+        val_labels=y_val_integers, 
+        use_kmeans=False, 
+        n_representatives=5
+    )
+    knn(
+        n_neighbors=12, 
+        train_representation=knn_representation, 
+        val_data=X_val_pca, 
+        val_labels=y_val_integers, 
+        use_kmeans=True, 
+        n_representatives=24
+    )
+    
 if __name__ == "__main__":
     problematique()
