@@ -153,7 +153,8 @@ def problematique():
     modele = keras.models.Sequential()
     modele.add(keras.layers.Dense(units=32, activation='relu', input_shape=(X_train.shape[1],)))
     modele.add(keras.layers.Dense(units=16, activation='relu'))
-    modele.add(keras.layers.Dense(units=3, activation='softmax'))
+    modele.add(keras.layers.Dense(units=8, activation='relu'))
+    modele.add(keras.layers.Dense(units=3, activation='linear'))
 
     descente_gradient = keras.optimizers.SGD(learning_rate=0.08, momentum = 0.01)
 
