@@ -230,21 +230,11 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     # Affichage de la matrice de confusion
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
-
-    # ... (ton code existant) ...
     error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
     print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
-    
-    # =========================================================================
-    # MÉTRIQUES POUR LA DIAPO 3 (Rappel, Score F1, etc.)
-    # =========================================================================
     print("\n--- Rapport de Classification (Détails par classe) ---")
     rapport = classification_report(y_val_integers, prediction, target_names=class_labels)
     print(rapport)
-
-    # Affichage de la matrice de confusion (tu l'as déjà !)
-    viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
-    plt.show()
 
 def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
     """
@@ -261,7 +251,6 @@ def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
     n_classes = len(class_labels)
     aprioris = np.array([1 / n_classes] * n_classes)
     
-    # RAPPEL : Pour la défense, justifie si tu modifies cette matrice pour le véhicule autonome !
     cost_matrix = np.ones((n_classes, n_classes)) - np.eye(n_classes)
     
     # On utilise l'histogramme au lieu de la gaussienne
@@ -281,25 +270,19 @@ def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
-    # ... (ton code existant) ...
     error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
     print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
     
-    # =========================================================================
-    # MÉTRIQUES POUR LA DIAPO 3 (Rappel, Score F1, etc.)
-    # =========================================================================
     print("\n--- Rapport de Classification (Détails par classe) ---")
     rapport = classification_report(y_val_integers, prediction, target_names=class_labels)
     print(rapport)
 
 def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_representatives, class_labels):
-    # On instancie
+
     knn_classifier = classifier.KNNClassifier(n_neighbors=n_neighbors, use_kmeans=use_kmeans, n_representatives=n_representatives)
-    
-    # On entraîne sur les données d'entraînement
+
     knn_classifier.fit(train_representation)
-    
-    # MODIFICATION CRITIQUE : On prédit et on évalue sur les données de validation !
+
     predictions = knn_classifier.predict(val_data)
     error_rate, error_indices = analysis.compute_error_rate(val_labels, predictions)
     
