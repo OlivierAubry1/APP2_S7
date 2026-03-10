@@ -7,6 +7,10 @@ from keras.src.utils.module_utils import scipy
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
+from keras.src.callbacks import EarlyStopping
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 
 import helpers.dataset as dataset
@@ -166,11 +170,19 @@ def train_eval_nn(X_train, X_val, y_train, y_val, class_labels):
         metrics=["accuracy"]
     )
 
+    arret_precoce = EarlyStopping(
+        monitor='val_loss',       # On surveille l'erreur sur les données de validation
+        patience=30,              # Nombre d'époques à tolérer sans amélioration avant de couper
+        restore_best_weights=True # CRITIQUE : Ramène les poids au meilleur moment, pas ceux de la fin
+    )
+
+    # Lancement de l'entraînement avec le callback
     history = model.fit(
         X_train, y_train,
         batch_size=len(X_train),
-        epochs=750,
+        epochs=750,               # Tu peux laisser 750, il s'arrêtera tout seul bien avant !
         validation_data=(X_val, y_val),
+        callbacks=[arret_precoce], # Ajout du callback ici
         verbose=True
     )
 
@@ -207,9 +219,9 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     # 2. Créer l'objet Representation attendu par la méthode fit()
     train_representation = dataset.Representation(data=X_train, labels=y_train_integers)
     
-    # 3. Définir les aprioris et la matrice de coûts (équiprobables et coûts unitaires par défaut)
+    # 3. Définir les aprioris et la matrice de coûts
     n_classes = len(class_labels)
-    aprioris = np.array([1 / n_classes] * n_classes)
+    aprioris = np.array([360 / 980, 328 / 980, 292 / 980])
     cost_matrix = np.ones((n_classes, n_classes)) - np.eye(n_classes)
     
     bayes_classifier = classifier.BayesClassifier(
