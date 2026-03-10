@@ -299,6 +299,8 @@ def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_r
     error_rate, error_indices = analysis.compute_error_rate(val_labels, predictions)
     
     print(f"\n\n{len(error_indices)} erreur de classification sur {len(val_labels)} échantillons ({error_rate * 100:.2f} %)")
+    viz.show_confusion_matrix(val_labels, predictions, class_labels, plot=True)
+    plt.show()
     mode = "K-Moyennes + KNN" if use_kmeans else "KNN Classique"
     print(f"\nRapport de Classification ({mode}):")
     rapport = classification_report(val_labels, predictions, target_names=class_labels)
