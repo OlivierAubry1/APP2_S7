@@ -248,7 +248,7 @@ class HistogramPDF(ProbabilityDensityFunction):
         compute_probability(data): Calcule la probabilité des données selon la
             distribution basée sur l'histogramme.
     """
-    def __init__(self, data: numpy.ndarray, n_bins = 5):
+    def __init__(self, data: numpy.ndarray, n_bins = 8):
         """
         Args:
             data (numpy.ndarray): Les données utilisées pour estimer les paramètres

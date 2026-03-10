@@ -6,6 +6,8 @@ import sklearn
 from keras.src.utils.module_utils import scipy
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report
+
 
 import helpers.dataset as dataset
 import helpers.viz as viz
@@ -155,12 +157,12 @@ def train_eval_nn(X_train, X_val, y_train, y_val, class_labels):
         keras.layers.InputLayer(shape=(X_train.shape[-1],)),
         keras.layers.Dense(units=32, activation="relu"),
         keras.layers.Dense(units=16, activation="relu"),
-        keras.layers.Dense(units=y_train.shape[-1], activation="linear")
+        keras.layers.Dense(units=y_train.shape[-1], activation="softmax")
     ])
 
     model.compile(
         optimizer=keras.optimizers.SGD(learning_rate=0.08, momentum=0.03),
-        loss="mean_squared_error",
+        loss="categorical_crossentropy",
         metrics=["accuracy"]
     )
 
@@ -187,6 +189,9 @@ def train_eval_nn(X_train, X_val, y_train, y_val, class_labels):
     print(f"\n\n{len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}%).")
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
+    print("\n--- Rapport de Classification (Détails par classe) ---")
+    rapport = classification_report(y_val_integers, prediction, target_names=class_labels)
+    print(rapport)
 
 def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     """
@@ -226,6 +231,21 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
+    # ... (ton code existant) ...
+    error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
+    print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
+    
+    # =========================================================================
+    # MÉTRIQUES POUR LA DIAPO 3 (Rappel, Score F1, etc.)
+    # =========================================================================
+    print("\n--- Rapport de Classification (Détails par classe) ---")
+    rapport = classification_report(y_val_integers, prediction, target_names=class_labels)
+    print(rapport)
+
+    # Affichage de la matrice de confusion (tu l'as déjà !)
+    viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
+    plt.show()
+
 def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
     """
     Configure, entraîne et évalue le classificateur Bayésien avec densité arbitraire (histogramme).
@@ -261,7 +281,18 @@ def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
-def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_representatives):
+    # ... (ton code existant) ...
+    error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
+    print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
+    
+    # =========================================================================
+    # MÉTRIQUES POUR LA DIAPO 3 (Rappel, Score F1, etc.)
+    # =========================================================================
+    print("\n--- Rapport de Classification (Détails par classe) ---")
+    rapport = classification_report(y_val_integers, prediction, target_names=class_labels)
+    print(rapport)
+
+def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_representatives, class_labels):
     # On instancie
     knn_classifier = classifier.KNNClassifier(n_neighbors=n_neighbors, use_kmeans=use_kmeans, n_representatives=n_representatives)
     
@@ -273,6 +304,10 @@ def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_r
     error_rate, error_indices = analysis.compute_error_rate(val_labels, predictions)
     
     print(f"\n\n{len(error_indices)} erreur de classification sur {len(val_labels)} échantillons ({error_rate * 100:.2f} %)")
+    mode = "K-Moyennes + KNN" if use_kmeans else "KNN Classique"
+    print(f"\nRapport de Classification ({mode}):")
+    rapport = classification_report(val_labels, predictions, target_names=class_labels)
+    print(rapport)
 
 def problematique():
     dataset_path = pathlib.Path(__file__).parent / "data" / "image_dataset"
@@ -362,12 +397,12 @@ def problematique():
     # plt.show()
     
     # =====================Réseau neurones====================================================
-    #train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
 
     # ===========================Bayes==============================================
     train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
-    train_eval_bayes_histogram(X_train_pca[:, :2], 
-        X_val_pca[:, :2], 
+    train_eval_bayes_histogram(X_train_pca[:, :3], 
+        X_val_pca[:, :3], 
         y_train, 
         y_val, 
         encodeur.classes_)
@@ -389,7 +424,8 @@ def problematique():
         val_data=X_val_pca, 
         val_labels=y_val_integers, 
         use_kmeans=False, 
-        n_representatives=5
+        n_representatives=5, 
+        class_labels= encodeur.classes_
     )
     knn(
         n_neighbors=12, 
@@ -397,7 +433,8 @@ def problematique():
         val_data=X_val_pca, 
         val_labels=y_val_integers, 
         use_kmeans=True, 
-        n_representatives=24
+        n_representatives=24,
+        class_labels= encodeur.classes_
     )
     
 if __name__ == "__main__":
