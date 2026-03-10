@@ -248,7 +248,7 @@ class HistogramPDF(ProbabilityDensityFunction):
         compute_probability(data): Calcule la probabilité des données selon la
             distribution basée sur l'histogramme.
     """
-    def __init__(self, data: numpy.ndarray, n_bins = 30):
+    def __init__(self, data: numpy.ndarray, n_bins = 5):
         """
         Args:
             data (numpy.ndarray): Les données utilisées pour estimer les paramètres
@@ -268,26 +268,18 @@ class HistogramPDF(ProbabilityDensityFunction):
     def compute_probability(self, data: numpy.ndarray) -> numpy.ndarray:
         """
         Calcule la probabilité de chaque donnée selon la distribution basée sur l'histogramme.
-
-        Args:
-            data (numpy.ndarray): Les données pour lesquelles calculer la probabilité.
         """
-        # L3.S2.2 Compléter la méthode pour calculer la probabilité d'appartenir à cette classe
-        # ---------------------------------------------------------------------
         probs = numpy.zeros(data.shape[0])
         indices = []
-        out_of_bounds = numpy.zeros(data.shape[0], dtype=bool)
 
         # Pour chaque dimension (colonne) des données
         for i in range(data.shape[1]):
-            # digitize renvoie l'index du bac. On fait -1 car les index numpy commencent à 0
+            # digitize renvoie l'index du bac
             idx = numpy.digitize(data[:, i], self.bin_edges[i]) - 1
             
-            # Si le point est en dehors des limites d'entraînement, il est "out of bounds"
-            out_of_bounds |= (idx < 0) | (idx >= len(self.bin_edges[i]) - 1)
-            
-            # On "clip" les index pour éviter un IndexError lors de l'accès au tableau.
-            # Les valeurs hors limites recevront de toute façon une probabilité de 0 à la fin.
+            # CORRECTION : On "clip" simplement les index. 
+            # Les points hors limites sont repoussés dans le bac le plus proche aux extrémités.
+            # Cela donne une estimation réaliste pour les queues de la distribution.
             idx = numpy.clip(idx, 0, len(self.bin_edges[i]) - 2)
             indices.append(idx)
 
@@ -297,8 +289,9 @@ class HistogramPDF(ProbabilityDensityFunction):
         # On récupère les probabilités depuis l'histogramme
         probs = self.histogram[indices]
         
-        # On force à 0 la probabilité des points qui étaient hors de la grille
-        probs[out_of_bounds] = 0.0
+        # On garde epsilon UNIQUEMENT pour les bacs vides situés à l'intérieur de la distribution
+        epsilon = 1e-10
+        probs[probs == 0.0] = epsilon
 
         return probs
         # ---------------------------------------------------------------------

@@ -226,6 +226,41 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
     plt.show()
 
+def train_eval_bayes_histogram(X_train, X_val, y_train, y_val, class_labels):
+    """
+    Configure, entraîne et évalue le classificateur Bayésien avec densité arbitraire (histogramme).
+    """
+    print("\n" + "="*50)
+    print("--- Entraînement du Classificateur Bayésien (Histogramme) ---")
+    
+    y_train_integers = np.argmax(y_train, axis=-1)
+    y_val_integers = np.argmax(y_val, axis=-1)
+    
+    train_representation = dataset.Representation(data=X_train, labels=y_train_integers)
+    
+    n_classes = len(class_labels)
+    aprioris = np.array([1 / n_classes] * n_classes)
+    
+    # RAPPEL : Pour la défense, justifie si tu modifies cette matrice pour le véhicule autonome !
+    cost_matrix = np.ones((n_classes, n_classes)) - np.eye(n_classes)
+    
+    # On utilise l'histogramme au lieu de la gaussienne
+    bayes_classifier_hist = classifier.BayesClassifier(
+        aprioris=aprioris, 
+        cost_matrix=cost_matrix, 
+        density_function=analysis.HistogramPDF 
+    )
+    
+    bayes_classifier_hist.fit(train_representation)
+    prediction = bayes_classifier_hist.predict(X_val)
+    
+    error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
+    
+    print(f"\nPerformances Bayésien (Histogramme) : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
+    
+    viz.show_confusion_matrix(y_val_integers, prediction, class_labels, plot=True)
+    plt.show()
+
 def knn(n_neighbors, train_representation, val_data, val_labels, use_kmeans, n_representatives):
     # On instancie
     knn_classifier = classifier.KNNClassifier(n_neighbors=n_neighbors, use_kmeans=use_kmeans, n_representatives=n_representatives)
@@ -330,7 +365,12 @@ def problematique():
     #train_eval_nn(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
 
     # ===========================Bayes==============================================
-    #train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    train_eval_bayes(X_train_pca, X_val_pca, y_train, y_val, encodeur.classes_)
+    train_eval_bayes_histogram(X_train_pca[:, :2], 
+        X_val_pca[:, :2], 
+        y_train, 
+        y_val, 
+        encodeur.classes_)
 
     # ==============================KNN===========================================
     print("\n" + "="*50)
