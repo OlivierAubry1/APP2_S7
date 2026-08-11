@@ -37,7 +37,7 @@ def exercice_1_modele_gaussiens():
 
     # L3.E1.3 Superposer sur le graphique des classes les frontières calculées dans l'exercice préparatoire.
     # -------------------------------------------------------------------------
-    viz.plot_data_distribution(representation, show_ellipses=True, analytical_boundaries=True)
+    viz.plot_data_distribution(representation, show_ellipses=False, analytical_boundaries=False)
     # -------------------------------------------------------------------------
     # =========================================================================
 
@@ -168,7 +168,7 @@ def main():
     # pylint: disable = using-constant-test, multiple-statements
 
     if True: exercice_1_modele_gaussiens()
-    if False: exercice_2_classificateur_ppv()
+    if True: exercice_2_classificateur_ppv()
     if True: exercice_3_classificateur_bayesien()
     if True: exercice_s1_classificateur_bayesien_complet()
     if True: exercice_s2_pdf_arbitraire()

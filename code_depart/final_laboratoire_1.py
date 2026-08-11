@@ -29,8 +29,11 @@ def exercice_2_decorrelation():
     # -------------------------------------------------------------------------
     # Utilisez la fonction appropriée pour calculer les valeurs propres et vecteurs propres
     # À la place des vecteurs et valeurs propres nulles ci-dessous
-    #eigenvalues, eigenvectors = numpy.zeros(3), numpy.zeros((3, 3))
-    eigenvalues, eigenvectors = numpy.linalg.eigh(covariance)
+    eigenvalues, eigenvectors = numpy.linalg.eig(covariance)
+
+    idx = numpy.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:, idx]
 
     print("Exercice 2.1: Calcul des valeurs propres et vecteurs propres")
     viz.print_gaussian_model(mean, covariance, eigenvalues, eigenvectors)
@@ -48,28 +51,20 @@ def exercice_2_decorrelation():
 
     # L1.E2.5 Projetez la représentation des données sur la première composante principale
     # -------------------------------------------------------------------------
-    first_principal_component = numpy.zeros((3, 1))                                             # Sélectionnez la première composante principale
+    first_principal_component = eigenvectors[:,0:1]                                            # Sélectionnez la première composante principale
     decorrelated_samples = analysis.project_onto_new_basis(samples, first_principal_component)  # Complétez la fonction project_onto_new_basis dans analysis.py
 
     representation = dataset.Representation(data=decorrelated_samples, labels=numpy.array(["Data"] * decorrelated_samples.shape[0]))
-    #viz.plot_pdf(representation, n_bins=10, title="Projection des données sur la 1er composante")
-    plt.figure()
-    histogram, bin_edges = numpy.histogram(decorrelated_samples, bins=30, density=True)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    plt.bar(bin_centers, histogram, width=bin_edges[1] - bin_edges[0], alpha=0.6, color='g', label='Données projetées')
-    plt.title("Projection des données sur la 1ère composante principale")
-    plt.xlabel("Valeur projetée")
-    plt.ylabel("Densité de probabilité")
-    plt.legend()
+    viz.plot_pdf(representation, n_bins=10, title="Projection des données sur la 1er composante")
     # -------------------------------------------------------------------------
 
     # L1.E2.6 Projetez la représentation des données sur les 2e et 3e composantes principales
     # -------------------------------------------------------------------------
-    e23 = numpy.zeros((3, 2))                                       # Sélectionnez la 2e et 3e composante principale
+    e23 = eigenvectors[:,1:3]                                 # Sélectionnez la 2e et 3e composante principale
     reduced_samples = analysis.project_onto_new_basis(samples, e23) # Projetez les données sur les 2e et 3e composantes principales
 
-    projected_covariance = numpy.zeros((2,2))                                           # Utilisez la fonction appropriée pour calculer la matrice de covariance des données projetées
-    projected_eigenvalues, projected_eigenvectors = numpy.zeros(2), numpy.zeros((2,2))  # Utilisez la fonction appropriée pour calculer les valeurs propres et vecteurs propres des données projetées
+    projected_covariance = numpy.cov(reduced_samples)                                          # Utilisez la fonction appropriée pour calculer la matrice de covariance des données projetées
+    projected_eigenvalues, projected_eigenvectors =numpy.linalg.eig(projected_covariance)  # Utilisez la fonction appropriée pour calculer les valeurs propres et vecteurs propres des données projetées
 
     print("Exercice 2.6: Calcul de la matrice de covariance, vecteurs et valeurs propres projetées")
     viz.print_gaussian_model(mean[1:3], projected_covariance, projected_eigenvalues, projected_eigenvectors)
@@ -112,8 +107,8 @@ def exercice_3_visualisation_representation():
     # L1.E3.4 Calculer les variances sur chaque dimension pour la classe C1 ainsi que leur corrélations
     # -------------------------------------------------------------------------
     data_C1 = reprensentation.get_class("C1")
-    variances = numpy.var(data_C1)
-    correlations = numpy.corrcoef(data_C1)    # Utilisez la fonction appropriée pour calculer les corrélations
+    variances = numpy.var(data_C1, axis=0)                           # Utilisez la fonction appropriée pour calculer les variances
+    correlations = numpy.corrcoef(data_C1, rowvar=False)    # Utilisez la fonction appropriée pour calculer les corrélations
     print("Exercice 3.4: Variances et corrélations pour la classe C1")
     print(f"Variances : {variances}")
     print(f"Corrélations : \n{correlations}")
@@ -125,13 +120,12 @@ def exercice_3_visualisation_representation():
 
     # Utilisez la fonction appropriée pour projeter les données sur la nouvelle base
     # Indice: Utilisez la fonction project_onto_new_basis définie précédement pour créer une nouvelle représentation des données
-    decorrelated_data = analysis.project_onto_new_basis(data3classes.data, eigenvectors_C1)
+    decorrelated_data = analysis.project_onto_new_basis(reprensentation.data, eigenvectors_C1)
     decorrelated_representation = dataset.Representation(data=decorrelated_data, labels=data3classes.labels)
 
     print("\nExercice 3.6: Données décorrelées de la classe C1")
     decorrelated_data_C1 = decorrelated_representation.get_class("C1")
     _, covariance_decorrelated, _, _ = analysis.compute_gaussian_model(decorrelated_data_C1)
-
     print(f"Matrice de covariance des données décorrelées : \n{covariance_decorrelated}")
     # -------------------------------------------------------------------------
 
@@ -178,14 +172,7 @@ def exercice_4_choix_representation():
 
     # Visualiez les histogrammes des images dans les différents espaces de couleur
     # Indice: vous pouvez réutiliser la fonction viz.plot_images_histograms
-    viz.plot_images_histograms(samples_hsv, n_bins=256, 
-                              title="Histogrammes des intensités de pixels HSV",
-                              x_label="Valeur",
-                              y_label="Nombre de pixels",
-                              channel_names=['Hue', 'Sat', 'Val'],
-                              colors=['r', 'g', 'b'])
-    
-
+    viz.plot_images_histograms(samples_hsv, n_bins=256)
     # -------------------------------------------------------------------------
 
     # L1.E4.6 Calculer la moyen de chaque canal R, G et B pour chaque classe du dataset
@@ -196,10 +183,10 @@ def exercice_4_choix_representation():
 
         # L1.E4.7 Répéter pour une autre métrique de votre choix
         # ---------------------------------------------------------------------
-        ecart_type = numpy.std(image, axis=(0,1))  # Calculer une autre métrique de votre choix
+        other_feature = numpy.std(image, axis=(0,1))  # Calculer une autre métrique de votre choix
         # ---------------------------------------------------------------------
 
-        features[i] = numpy.concatenate((channels_mean, ecart_type))
+        features[i] = numpy.concatenate((channels_mean, other_feature))
 
     features = numpy.array(features)
     # =========================================================================
@@ -220,17 +207,17 @@ def exercice_4_choix_representation():
                                   ylabel="Nombre d'images")
 
     # Complétez l'affichage pour la métrique au choix
-    representation_ecart_type = dataset.Representation(data=features[:, 3:], labels=images.labels)
-    viz.plot_data_distribution(representation_ecart_type,
-                               title="Distribution basée sur les ÉCARTS-TYPES",
-                               xlabel="Std Rouge",
-                               ylabel="Std Vert",
-                               zlabel="Std Bleu")
+    representation_other_feature = dataset.Representation(data=features[:, 3:], labels=images.labels)
+    viz.plot_data_distribution(representation_other_feature,
+                               title="Distribution des images basée sur la métrique au choix",
+                               xlabel="Rouge",
+                               ylabel="Verte",
+                               zlabel="Bleue")
 
-    viz.plot_features_distribution(representation_ecart_type, n_bins=32,
-                                  title="Histogrammes des ÉCARTS-TYPES",
-                                  features_names=["Std Rouge", "Std Vert", "Std Bleu"],
-                                  xlabel="Écart-type",
+    viz.plot_features_distribution(representation_other_feature, n_bins=32,
+                                  title="Histogrammes de la métrique au choix",
+                                  features_names=["Rouge", "Vert", "Bleu"],
+                                  xlabel="Valeur",
                                   ylabel="Nombre d'images")
 
     # Étude de la corrélations
@@ -250,8 +237,8 @@ def exercice_4_choix_representation():
 def main():
     # pylint: disable = using-constant-test, multiple-statements
 
-    if True: exercice_2_decorrelation()
-    if True: exercice_3_visualisation_representation()
+    if False: exercice_2_decorrelation()
+    if False: exercice_3_visualisation_representation()
     if True: exercice_4_choix_representation()
 
 

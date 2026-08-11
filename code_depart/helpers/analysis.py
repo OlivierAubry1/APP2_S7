@@ -25,7 +25,7 @@ def project_onto_new_basis(data: numpy.ndarray, basis: numpy.ndarray) -> numpy.n
 
     # L1.E2.5 Complétez cette fonction pour projeter les données sur une nouvelle base
     # -------------------------------------------------------------------------
-    return numpy.zeros((data.shape[0], basis.shape[-1]))  # Remplacez cette ligne par le code de projection réel
+    return numpy.dot(data, basis)  # Remplacez cette ligne par le code de projection réel
     # -------------------------------------------------------------------------
 
 
@@ -41,13 +41,14 @@ def compute_gaussian_model(data: numpy.ndarray):
     """
     # L1.E3.2 Calculer la moyenne et la matrice de covariance des données
     # -------------------------------------------------------------------------
-    mean = numpy.zeros(data.shape[1])
-    covariance = numpy.eye(data.shape[1])
+    mean = numpy.mean(data, axis=0)
+    covariance = numpy.cov(data, rowvar=False)
     # -------------------------------------------------------------------------
 
     # L1.E3.5 Calculer les valeurs propres et les vecteurs propres de la matrice de covariance
     # -------------------------------------------------------------------------
-    eigenvalues, eigenvectors = numpy.zeros(data.shape[1]), numpy.zeros((data.shape[1], data.shape[1]))
+    #eigenvalues, eigenvectors = numpy.zeros(data.shape[1]), numpy.zeros((data.shape[1], data.shape[1]))
+    eigenvalues, eigenvectors = numpy.linalg.eig(covariance)
     # -------------------------------------------------------------------------
 
     return mean, covariance, eigenvalues, eigenvectors
@@ -247,7 +248,7 @@ class HistogramPDF(ProbabilityDensityFunction):
         compute_probability(data): Calcule la probabilité des données selon la
             distribution basée sur l'histogramme.
     """
-    def __init__(self, data: numpy.ndarray, n_bins = 30):
+    def __init__(self, data: numpy.ndarray, n_bins = 8):
         """
         Args:
             data (numpy.ndarray): Les données utilisées pour estimer les paramètres
@@ -261,17 +262,36 @@ class HistogramPDF(ProbabilityDensityFunction):
         # L3.S2.1 Construire un modèle empirique de densité de probabilité pour chacune des classes
         # (Utilisez numpy.histogramdd, retirez les tenseur nulles et les 1 suspect)
         # ---------------------------------------------------------------------
-        self.histogram, self.bin_edges = numpy.histogramdd(numpy.zeros_like(data), bins=1, density=True)
+        self.histogram, self.bin_edges = numpy.histogramdd(data, bins=self.n_bins, density=True)        
         # ---------------------------------------------------------------------
 
     def compute_probability(self, data: numpy.ndarray) -> numpy.ndarray:
         """
         Calcule la probabilité de chaque donnée selon la distribution basée sur l'histogramme.
-
-        Args:
-            data (numpy.ndarray): Les données pour lesquelles calculer la probabilité.
         """
-        # L3.S2.2 Compléter la méthode pour calculer la probabilité d'appartenir à cette classe
-        # ---------------------------------------------------------------------
-        return numpy.zeros(data.shape[0])
+        probs = numpy.zeros(data.shape[0])
+        indices = []
+
+        # Pour chaque dimension (colonne) des données
+        for i in range(data.shape[1]):
+            # digitize renvoie l'index du bac
+            idx = numpy.digitize(data[:, i], self.bin_edges[i]) - 1
+            
+            # CORRECTION : On "clip" simplement les index. 
+            # Les points hors limites sont repoussés dans le bac le plus proche aux extrémités.
+            # Cela donne une estimation réaliste pour les queues de la distribution.
+            idx = numpy.clip(idx, 0, len(self.bin_edges[i]) - 2)
+            indices.append(idx)
+
+        # On convertit la liste d'index en tuple pour indexer la matrice multi-dimensionnelle
+        indices = tuple(indices)
+        
+        # On récupère les probabilités depuis l'histogramme
+        probs = self.histogram[indices]
+        
+        # On garde epsilon UNIQUEMENT pour les bacs vides situés à l'intérieur de la distribution
+        epsilon = 1e-10
+        probs[probs == 0.0] = epsilon
+
+        return probs
         # ---------------------------------------------------------------------

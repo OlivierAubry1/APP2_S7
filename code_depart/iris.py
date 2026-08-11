@@ -77,15 +77,15 @@ def main():
 
     print("\n----- Classe 1 -----")
     mean1, cov1, eigvals1, eigvecs1 = analysis.compute_gaussian_model(C1)
-    viz.print_gaussian_model(mean1, cov1, eigvals1, eigvecs1)
+    #viz.print_gaussian_model(mean1, cov1, eigvals1, eigvecs1)
 
     print("\n----- Classe 2 -----")
     mean2, cov2, eigvals2, eigvecs2 = analysis.compute_gaussian_model(C2)
-    viz.print_gaussian_model(mean2, cov2, eigvals2, eigvecs2)
+    #viz.print_gaussian_model(mean2, cov2, eigvals2, eigvecs2)
 
     print("\n----- Classe 3 -----")
     mean3, cov3, eigvals3, eigvecs3 = analysis.compute_gaussian_model(C3)
-    viz.print_gaussian_model(mean3, cov3, eigvals3, eigvecs3)
+    #viz.print_gaussian_model(mean3, cov3, eigvals3, eigvecs3)
 
     # Plot 3D representation of the dataset
 
@@ -93,11 +93,24 @@ def main():
     # -------------------------------------------------------------------------
     # dimension 0, 1, 2
     representation = dataset.Representation(data=data[:, [0, 1, 2]], labels=labels)
-    viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 1, 2, 3)", xlabel="Caractéristique 1", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
-
+    #viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 1, 2)", xlabel="Caractéristique 0", ylabel="Caractéristique 1", zlabel="Caractéristique 2")
+    
     # dimension i, j, k
-
+    representation = dataset.Representation(data=data[:, [1, 2, 3]], labels=labels)
+    #viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 1, 2, 3)", xlabel="Caractéristique 1", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
+    
     # -----------------------------------------------------------------
+    # dimension i, j, k
+    representation = dataset.Representation(data=data[:, [0, 2, 3]], labels=labels)
+    #viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 2, 3)", xlabel="Caractéristique 0", ylabel="Caractéristique 2", zlabel="Caractéristique 3")
+    
+    # -----------------------------------------------------------------
+    # dimension i, j, k
+    representation = dataset.Representation(data=data[:, [0, 1, 3]], labels=labels)
+    #viz.plot_data_distribution(representation, title="Représentation 3D des fleurs d'iris (dim 0, 1, 3)", xlabel="Caractéristique 0", ylabel="Caractéristique 1", zlabel="Caractéristique 3")
+    
+    # -----------------------------------------------------------------
+
 
     plt.show()
 
@@ -139,7 +152,7 @@ def main():
     # (e.g., normalisation, centrage, filtrage, réduction de dimensionnalité, etc.)
     # -------------------------------------------------------------------------
     # normalized in the range [-1, 1]
-    scaled_data = analysis.rescale_data(data_projected)
+    scaled_data = analysis.rescale_data(data_projected[:,[0,1,2]])
     # -------------------------------------------------------------------------
 
     # L2.E3.3 Créez un ensemble d'entraînement et de validation à partir des données préparées.
@@ -154,18 +167,25 @@ def main():
     # -------------------------------------------------------------------------
     model = keras.models.Sequential()
     model.add(keras.layers.InputLayer(input_shape=(scaled_data.shape[-1],)))
-    model.add(keras.layers.Dense(units=3, activation="linear"))
-    model.add(keras.layers.Dense(units=labels_one_hot.shape[-1], activation="linear"))
+    
+    # Wider layers to capture patterns, using ReLU
+    model.add(keras.layers.Dense(units=16, activation="relu"))
+    model.add(keras.layers.Dense(units=16, activation="relu"))
+    
+    # Output layer: MUST match the number of classes (3)
+    # MUST use softmax for multi-class classification
+    model.add(keras.layers.Dense(units=labels_one_hot.shape[-1], activation="softmax"))
+    
     print(model.summary())
-    # -------------------------------------------------------------------------
 
-    # L2.E3.4 Testez plusieurs configurations d'optimisateur, de taux d'apprentissage et de fonction de coût.
+    # L2.E3.4 Optimisateur Adam et CategoricalCrossentropy
     # -------------------------------------------------------------------------
     model.compile(
-        optimizer=keras.optimizers.SGD(learning_rate=0.001, momentum=0.01),
-        loss=keras.losses.MeanSquaredError(),
+        optimizer=keras.optimizers.Adam(learning_rate=0.01), # Faster than SGD
+        loss=keras.losses.CategoricalCrossentropy(),         # Standard for multi-class
         metrics=["accuracy"]
     )
+    # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
 
     # Entrainement du modèle
@@ -178,7 +198,7 @@ def main():
         train_data, train_labels,
         batch_size=16,
         shuffle=True,
-        epochs=10,
+        epochs=500,
         callbacks=callbacks,
         verbose=True
     )
