@@ -211,15 +211,12 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
     """
     print("\n" + "="*50)
     print("--- Entraînement du Classificateur Bayésien ---")
-    
-    # 1. Reconvertir les étiquettes one-hot en entiers (0, 1, 2)
+
     y_train_integers = np.argmax(y_train, axis=-1)
     y_val_integers = np.argmax(y_val, axis=-1)
     
-    # 2. Créer l'objet Representation attendu par la méthode fit()
     train_representation = dataset.Representation(data=X_train, labels=y_train_integers)
     
-    # 3. Définir les aprioris et la matrice de coûts
     n_classes = len(class_labels)
     aprioris = np.array([360 / 980, 328 / 980, 292 / 980])
     cost_matrix = np.ones((n_classes, n_classes)) - np.eye(n_classes)
@@ -234,7 +231,7 @@ def train_eval_bayes(X_train, X_val, y_train, y_val, class_labels):
 
     prediction = bayes_classifier.predict(X_val)
     
-    # 7. Évaluer et afficher les performances
+    # Évaluer et afficher les performances
     error_rate, indexes_errors = analysis.compute_error_rate(y_val_integers, prediction)
     
     print(f"\nPerformances Bayésien : {len(indexes_errors)} erreurs sur {len(y_val_integers)} échantillons ({error_rate * 100:.2f}% d'erreur).")
@@ -357,7 +354,6 @@ def problematique():
     mean3, cov3, eigvals3, eigvecs3 = analysis.compute_gaussian_model(C3)
     viz.print_gaussian_model(mean3, cov3, eigvals3, eigvecs3)
 
-    # Plot 3D representations using different combinations of your 4 features
     representation1 = dataset.Representation(data=data[:, [0, 1, 2]], labels=labels)
     viz.plot_data_distribution(representation1, title="Représentation 3D (Sobel Std, HSV Val, V/H Ratio)",
                                xlabel="Sobel Std", ylabel="HSV Value", zlabel="V/H Ratio")
